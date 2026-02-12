@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>URL Transformer</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #16161f;
+      --border: #2a2a3a;
+      --border-bright: #3d3d5c;
+      --accent: #7c6fff;
+      --accent2: #ff6b9d;
+      --accent3: #00d4aa;
+      --text: #e8e8f0;
+      --text-dim: #7a7a9a;
+      --text-dimmer: #44445a;
+      --success: #00d4aa;
+      --error: #ff5566;
+      --glow: rgba(124, 111, 255, 0.15);
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      overflow-x: hidden;
+    }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(124,111,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,111,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Ambient glow blobs */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(124,111,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 780px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      animation: fadeDown 0.6s ease both;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(124,111,255,0.1);
+      border: 1px solid rgba(124,111,255,0.25);
+      border-radius: 100px;
+      padding: 4px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fff 30%, var(--accent) 70%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      font-weight: 400;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      animation: fadeUp 0.6s ease 0.1s both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+      opacity: 0.5;
+    }
+
+    /* Section label */
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dimmer);
+      margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Textarea */
+    .input-wrap {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      padding: 1rem 1.1rem;
+      resize: vertical;
+      min-height: 90px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      word-break: break-all;
+    }
+
+    textarea::placeholder {
+      color: var(--text-dimmer);
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--glow);
+    }
+
+    textarea.error-field {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(255, 85, 102, 0.1);
+    }
+
+    .char-count {
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-dimmer);
+      pointer-events: none;
+    }
+
+    /* Config row */
+    .config-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 520px) {
+      .config-row { grid-template-columns: 1fr; }
+    }
+
+    .field-group label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+
+    .field-group input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      padding: 0.65rem 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    .field-group input::placeholder {
+      color: var(--text-dimmer);
+    }
+
+    .field-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--glow);
+    }
+
+    /* Transform button */
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    button {
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      flex: 1;
+      background: linear-gradient(135deg, var(--accent), #9b8cff);
+      color: #fff;
+      font-size: 0.95rem;
+      padding: 0.8rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .btn-primary:hover::before { opacity: 1; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,111,255,0.35); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      padding: 0.8rem 1.2rem;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--border-bright);
+      color: var(--text);
+      background: var(--border);
+    }
+
+    /* Result */
+    .result-wrap {
+      display: none;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .result-wrap.visible { display: block; }
+
+    .result-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
+    }
+
+    .result-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .result-status.ok { color: var(--success); }
+    .result-status.err { color: var(--error); }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .btn-copy {
+      background: rgba(124,111,255,0.12);
+      border: 1px solid rgba(124,111,255,0.25);
+      color: var(--accent);
+      font-size: 0.75rem;
+      padding: 0.3rem 0.8rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.04em;
+      transition: all 0.2s;
+    }
+
+    .btn-copy:hover {
+      background: rgba(124,111,255,0.2);
+      border-color: var(--accent);
+    }
+
+    .btn-copy.copied {
+      background: rgba(0,212,170,0.12);
+      border-color: rgba(0,212,170,0.3);
+      color: var(--success);
+    }
+
+    .result-content {
+      padding: 1rem 1.1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: var(--text);
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .result-content .part-dim { color: var(--text-dimmer); }
+    .result-content .part-path { color: #93c5fd; }
+    .result-content .part-query { color: var(--accent2); }
+    .result-content .part-highlight { color: var(--accent3); }
+
+    /* Diff section */
+    .diff-wrap {
+      margin-top: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .diff-header {
+      padding: 0.5rem 1rem;
+      background: rgba(0,0,0,0.2);
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-dimmer);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .diff-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      line-height: 1.6;
+    }
+
+    .diff-row + .diff-row { border-top: 1px solid var(--border); }
+
+    .diff-sign {
+      flex-shrink: 0;
+      width: 32px;
+      text-align: center;
+      padding: 0.6rem 0;
+      font-weight: 700;
+    }
+
+    .diff-text {
+      flex: 1;
+      padding: 0.6rem 0.8rem 0.6rem 0;
+      word-break: break-all;
+    }
+
+    .diff-from .diff-sign { color: var(--error); background: rgba(255,85,102,0.06); }
+    .diff-from .diff-text { color: var(--text-dim); background: rgba(255,85,102,0.04); }
+    .diff-to .diff-sign { color: var(--success); background: rgba(0,212,170,0.06); }
+    .diff-to .diff-text { color: var(--text); background: rgba(0,212,170,0.04); }
+
+    /* Error message */
+    .error-msg {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,85,102,0.08);
+      border: 1px solid rgba(255,85,102,0.25);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: var(--error);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      margin-bottom: 1rem;
+    }
+
+    .error-msg.visible { display: flex; }
+
+    /* Animations */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Tooltip */
+    [data-tip] {
+      position: relative;
+    }
+
+    /* Swap arrow */
+    .arrow-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin: 0.3rem 0 1.2rem;
+      color: var(--text-dimmer);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+    }
+
+    .arrow-row::before, .arrow-row::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border));
+    }
+
+    .arrow-row::after {
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="badge">URL Transformer</div>
+    <h1>Replace Host &amp; Path</h1>
+    <p class="subtitle">Swap any remote URL to your local environment instantly</p>
+  </header>
+
+  <div class="card">
+    <!-- Input URL -->
+    <div class="section-label">Input URL</div>
+    <div class="input-wrap">
+      <textarea id="inputUrl" placeholder="https://advantagetouch.stayinfrontadvantage.com/AdvantageTouchCG/sfweb/HandleSessionToken?token=AQBEkZBy6tkyTrZy/MXCnh1ZBVQAbwB1AGMAaAA=&amp;originalURL=https://advantagetouch.stayinfrontadvantage.com/AdvantageTouchCG/" spellcheck="false"></textarea>
+      <span class="char-count" id="charCount">0</span>
+    </div>
+
+    <!-- Replacement Config -->
+    <div class="config-row">
+      <div class="field-group">
+        <label>Replace host with</label>
+        <input type="text" id="newHost" value="localhost" placeholder="e.g. localhost or 192.168.1.1" />
+      </div>
+      <div class="field-group">
+        <label>New protocol</label>
+        <input type="text" id="newProtocol" value="http" placeholder="http or https" />
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-msg" id="errorMsg">
+      <span>✕</span>
+      <span id="errorText">Invalid URL.</span>
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+      <button class="btn-primary" onclick="transform()">⟶ Transform URL</button>
+      <button class="btn-secondary" onclick="clearAll()">Clear</button>
+    </div>
+
+    <!-- Result -->
+    <div class="result-wrap" id="resultWrap">
+      <div class="section-label">Transformed URL</div>
+      <div class="result-box">
+        <div class="result-header">
+          <span class="result-status ok" id="resultStatus">
+            <span class="status-dot"></span> Transformed
+          </span>
+          <button class="btn-copy" id="copyBtn" onclick="copyResult()">Copy</button>
+        </div>
+        <div class="result-content" id="resultContent"></div>
+      </div>
+
+
+    </div>
+  </div>
+
+
+</div>
+
+<script>
+  const inputUrl = document.getElementById('inputUrl');
+  const newHost = document.getElementById('newHost');
+  const newProtocol = document.getElementById('newProtocol');
+
+  // Char count
+  inputUrl.addEventListener('input', () => {
+    document.getElementById('charCount').textContent = inputUrl.value.length;
+    hideError();
+  });
+
+  // Ctrl+Enter to transform
+  inputUrl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) transform();
+  });
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    document.getElementById('errorText').textContent = msg;
+    el.classList.add('visible');
+    inputUrl.classList.add('error-field');
+  }
+
+  function hideError() {
+    document.getElementById('errorMsg').classList.remove('visible');
+    inputUrl.classList.remove('error-field');
+  }
+
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function replaceHostInUrl(urlStr, targetHost, targetProtocol) {
+    let parsed;
+    try {
+      parsed = new URL(urlStr.trim());
+    } catch {
+      throw new Error('Could not parse the URL. Make sure it starts with http:// or https://');
+    }
+    const originalHost = parsed.hostname;
+    const newBase = `${targetProtocol}://${targetHost}`;
+    let result = urlStr.trim().replace(
+      new RegExp(`https?:\\/\\/${escapeRegex(originalHost)}`, 'g'),
+      newBase
+    );
+    return result;
+  }
+
+  function transform() {
+    hideError();
+    const raw = inputUrl.value.trim();
+    if (!raw) { showError('Please paste a URL to transform.'); return; }
+
+    const host = newHost.value.trim() || 'localhost';
+    const proto = (newProtocol.value.trim() || 'http').replace(/[^a-zA-Z+\-.]/g, '');
+
+    let transformed;
+    try {
+      transformed = replaceHostInUrl(raw, host, proto);
+    } catch (e) {
+      showError(e.message);
+      return;
+    }
+
+    document.getElementById('resultContent').textContent = transformed;
+    const wrap = document.getElementById('resultWrap');
+    wrap.classList.remove('visible');
+    void wrap.offsetWidth;
+    wrap.classList.add('visible');
+  }
+
+  function copyResult() {
+    const text = document.getElementById('resultContent').textContent;
+    if (!text) return;
+    const btn = document.getElementById('copyBtn');
+
+    function onSuccess() {
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    }
+
+    function onFail() {
+      btn.textContent = '✕ Failed';
+      btn.style.color = 'var(--error)';
+      setTimeout(() => { btn.textContent = 'Copy'; btn.style.color = ''; }, 2000);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(onSuccess).catch(() => legacyCopy(text, onSuccess, onFail));
+    } else {
+      legacyCopy(text, onSuccess, onFail);
+    }
+  }
+
+  function legacyCopy(text, onSuccess, onFail) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy') ? onSuccess() : onFail();
+    } catch (e) {
+      onFail();
+    } finally {
+      document.body.removeChild(ta);
+    }
+  }
+
+  function clearAll() {
+    inputUrl.value = '';
+    document.getElementById('charCount').textContent = '0';
+    document.getElementById('resultWrap').classList.remove('visible');
+    hideError();
+  }
+
+  // Init char count
+  document.getElementById('charCount').textContent = inputUrl.value.length;
+</script>
+</body>
+</html>
