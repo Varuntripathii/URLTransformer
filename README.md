@@ -8,19 +8,7 @@ A lightweight, single-file web app that rewrites remote URLs to point to your lo
 
 When working with applications that generate session-based or redirect URLs pointing to a remote server, you often need to remap those URLs to your local machine for testing. This tool does exactly that.
 
-Paste in a URL like:
-
-```
-https://advantagetouch.stayinfrontadvantage.com/AdvantageTouchCG/sfweb/HandleSessionToken?token=AQBEkZBy6tkyTrZy/MXCnh1ZBVQAbwB1AGMAaAA=&originalURL=https://advantagetouch.stayinfrontadvantage.com/AdvantageTouchCG/
-```
-
-And it transforms it to:
-
-```
-http://localhost/AdvantageTouchCG/sfweb/HandleSessionToken?token=AQBEkZBy6tkyTrZy/MXCnh1ZBVQAbwB1AGMAaAA=&originalURL=http://localhost/AdvantageTouchCG/
-```
-
-It replaces **every occurrence** of the remote hostname — including ones embedded inside query parameters like `originalURL=` — so the entire URL is consistently rewritten in one shot.
+Paste in any remote URL and it rewrites the hostname and protocol throughout — including any occurrences embedded inside query parameters like `originalURL=` — so the entire URL is consistently rewritten in one shot.
 
 ---
 
