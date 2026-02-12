@@ -450,7 +450,7 @@
   <header>
     <div class="badge">URL Transformer</div>
     <h1>Replace Host &amp; Path</h1>
-    <p class="subtitle">Swap any SIF Login URL to your local environment instantly</p>
+    <p class="subtitle">Swap SIF support site Login URL to your local environment instantly</p>
   </header>
 
   <div class="card">
@@ -461,17 +461,7 @@
       <span class="char-count" id="charCount">0</span>
     </div>
 
-    <!-- Replacement Config -->
-    <div class="config-row">
-      <div class="field-group">
-        <label>Replace host with</label>
-        <input type="text" id="newHost" value="localhost" placeholder="e.g. localhost or 192.168.1.1" />
-      </div>
-      <div class="field-group">
-        <label>New protocol</label>
-        <input type="text" id="newProtocol" value="http" placeholder="http or https" />
-      </div>
-    </div>
+
 
     <!-- Error -->
     <div class="error-msg" id="errorMsg">
@@ -505,8 +495,6 @@
 
 <script>
   const inputUrl = document.getElementById('inputUrl');
-  const newHost = document.getElementById('newHost');
-  const newProtocol = document.getElementById('newProtocol');
 
   // Char count
   inputUrl.addEventListener('input', () => {
@@ -592,8 +580,9 @@
     const raw = inputUrl.value.trim();
     if (!raw) { showError('Please paste a URL to transform.'); return; }
 
-    const host = newHost.value.trim() || 'localhost';
-    const proto = (newProtocol.value.trim() || 'http').replace(/[^a-zA-Z+\-.]/g, '');
+    // Hardcoded values - no longer editable by user
+    const host = 'localhost';
+    const proto = 'http';
 
     let result;
     try {
